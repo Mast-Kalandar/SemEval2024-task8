@@ -1,5 +1,13 @@
 # SemEval-2024 Task 8: Multigenerator, Multidomain, and Multilingual Black-Box Machine-Generated Text Detection
 
+## Team - Mast-Kalandar
+
+### Members
+- Jainit Bafna 
+- Suyash Sethia
+- Hardik Mittal
+### {hardik,jainit,suyash}@research.iiit.ac.in
+
 [![Code License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://raw.githubusercontent.com/mbzuai-nlp/SemEval2024-task8/subtask_A_and_B/LICENSE)
 
 <p align="left" float="left">
