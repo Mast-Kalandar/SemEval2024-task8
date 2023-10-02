@@ -8,10 +8,13 @@ from sklearn.model_selection import train_test_split
 from scipy.special import softmax
 import argparse
 import logging
+import torch.nn as nn
+import torch
 
 def preprocess_function(examples, **fn_kwargs):
     return fn_kwargs['tokenizer'](examples["text"], truncation=True)
 
+print("Num GPUs Available: ", (torch.cuda.device_count()))
 
 def get_data(train_path, test_path, random_seed):
     """
@@ -45,10 +48,14 @@ def fine_tune(train_df, valid_df, checkpoints_path, id2label, label2id, model):
     valid_dataset = Dataset.from_pandas(valid_df)
     
     # get tokenizer and model from huggingface
-    tokenizer = AutoTokenizer.from_pretrained(model)     # put your model here
+    tokenizer = AutoTokenizer.from_pretrained("/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988")     # put your model here
     model = AutoModelForSequenceClassification.from_pretrained(
-       model, num_labels=len(label2id), id2label=id2label, label2id=label2id    # put your model here
+       "/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", num_labels=len(label2id), id2label=id2label, label2id=label2id    # put your model here
     )
+    # model = nn.DataParallel(model)
+    
+ 
+
     
     # tokenize data for train/valid
     tokenized_train_dataset = train_dataset.map(preprocess_function, batched=True, fn_kwargs={'tokenizer': tokenizer})
@@ -62,13 +69,14 @@ def fine_tune(train_df, valid_df, checkpoints_path, id2label, label2id, model):
     training_args = TrainingArguments(
         output_dir=checkpoints_path,
         learning_rate=2e-5,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        num_train_epochs=3,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        num_train_epochs=1,
         weight_decay=0.01,
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
+        
     )
 
     trainer = Trainer(
@@ -169,10 +177,10 @@ if __name__ == '__main__':
     train_df, valid_df, test_df = get_data(train_path, test_path, random_seed)
     
     # train detector model
-    fine_tune(train_df, valid_df, f"{model}/subtask{subtask}/{random_seed}", id2label, label2id, model)
+    fine_tune(train_df, valid_df, f"/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", id2label, label2id, model)
 
     # test detector model
-    results, predictions = test(test_df, f"{model}/subtask{subtask}/{random_seed}/best/", id2label, label2id)
+    results, predictions = test(test_df, f"/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", id2label, label2id)
     
     logging.info(results)
     predictions_df = pd.DataFrame({'id': test_df['id'], 'label': predictions})

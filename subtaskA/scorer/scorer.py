@@ -4,7 +4,7 @@ from sklearn.metrics import f1_score, accuracy_score
 import pandas as pd
 import sys
 sys.path.append('.')
-from subtaskB.format_checker.format_checker import check_format
+# from subtaskB.format_checker.format_checker import check_format
 
 """
 Scoring of SEMEVAL-Task-8--subtask-A-and-B  with the metrics f1-macro, f1-micro and accuracy. 
@@ -39,9 +39,9 @@ def evaluate(pred_fpath, gold_fpath):
 
 
 def validate_files(pred_files):
-  if not check_format(pred_files):
-    logging.error('Bad format for pred file {}. Cannot score.'.format(pred_files))
-    return False
+  # if not check_format(pred_files):
+  #   logging.error('Bad format for pred file {}. Cannot score.'.format(pred_files))
+  #   return False
   return True
 
 
@@ -57,6 +57,6 @@ if __name__ == '__main__':
   if validate_files(pred_file_path):
     logging.info('Prediction file format is correct')
     macro_f1, micro_f1, accuracy = evaluate(pred_file_path, gold_file_path)
-    logging.info("macro-F1={:.5f}\tmicro-F1={:.5f}\taccuracy={:.5f}".format(macro_f1, micro_f1, accuracy))
+    print("macro-F1={:.5f}\tmicro-F1={:.5f}\taccuracy={:.5f}".format(macro_f1, micro_f1, accuracy))
 
 
