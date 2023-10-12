@@ -3,3 +3,5 @@ wandb/
 runs/
 subtaskA/baseline/bert-base-uncased
 subtaskA/baseline/xlm-roberta-base
+subtaskA/SubtaskA
+subtaskA/baseline/bert.txt
