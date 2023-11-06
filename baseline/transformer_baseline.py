@@ -136,21 +136,21 @@ def test(test_df, model_path, id2label, label2id):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--train_file_path", "-tr", required=True, help="Path to the train file.", type=str)
-    parser.add_argument("--test_file_path", "-t", required=True, help="Path to the test file.", type=str)
-    parser.add_argument("--subtask", "-sb", required=True, help="Subtask (A or B).", type=str, choices=['A', 'B'])
-    parser.add_argument("--model", "-m", required=True, help="Transformer to train and test", type=str)
-    parser.add_argument("--prediction_file_path", "-p", required=True, help="Path where to save the prediction file.", type=str)
+    # parser = argparse.ArgumentParser()
+    # # parser.add_argument("--train_file_path", "-tr", required=True, help="Path to the train file.", type=str)
+    # # parser.add_argument("--test_file_path", "-t", required=True, help="Path to the test file.", type=str)
+    # # parser.add_argument("--subtask", "-sb", required=True, help="Subtask (A or B).", type=str, choices=['A', 'B'])
+    # # parser.add_argument("--model", "-m", required=True, help="Transformer to train and test", type=str)
+    # # parser.add_argument("--prediction_file_path", "-p", required=True, help="Path where to save the prediction file.", type=str)
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
     random_seed = 0
-    train_path =  args.train_file_path # For example 'subtaskA_train_multilingual.jsonl'
-    test_path =  args.test_file_path # For example 'subtaskA_test_multilingual.jsonl'
-    model =  args.model # For example 'xlm-roberta-base'
-    subtask =  args.subtask # For example 'A'
-    prediction_path = args.prediction_file_path # For example subtaskB_predictions.jsonl
+    train_path =  "/scratch/jainit/SubtaskA/subtaskA_train_monolingual.jsonl"
+    test_path = "/scratch/jainit/SubtaskA/subtaskA_dev_monolingual.jsonl"
+    model =  "/scratch/jainit/SemEval2024-task8/subtaskA/baseline"
+    subtask =   'A'
+    prediction_path = "pred_train_roberta.txt"
 
     if not os.path.exists(train_path):
         logging.error("File doesnt exists: {}".format(train_path))
@@ -177,11 +177,11 @@ if __name__ == '__main__':
     train_df, valid_df, test_df = get_data(train_path, test_path, random_seed)
     
     # train detector model
-    fine_tune(train_df, valid_df, f"/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", id2label, label2id, model)
+    # fine_tune(train_df, valid_df, f"/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", id2label, label2id, model)
 
     # test detector model
-    results, predictions = test(test_df, f"/home2/jainit/SemEval2024-task8/subtaskA/baseline/xlm-roberta-base/subtaskA/0/checkpoint-5988", id2label, label2id)
+    results, predictions = test(train_df, "/scratch/jainit/SemEval2024-task8/subtaskA/baseline/roberta-base/subtaskA/0/best", id2label, label2id)
     
-    logging.info(results)
-    predictions_df = pd.DataFrame({'id': test_df['id'], 'label': predictions})
+    # logging.info(results)
+    predictions_df = pd.DataFrame({'id': train_df['id'], 'label': predictions})
     predictions_df.to_json(prediction_path, lines=True, orient='records')
