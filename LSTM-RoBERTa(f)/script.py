@@ -27,7 +27,7 @@ last_hidden_states = outputs.last_hidden_state
 class LSTM_RoBERTA(nn.Module):
     def __init__(self,roberta_path = "roberta-base",lstm_hidden_size=256,lstm_layers=2,lstm_dropout=0.2 , num_classes=2):
         super().__init__()
-        self.roberta = RobertaModel.from_pretrained(roberta_path)
+        self.roberta = RobertaModel.from_pretrained(roberta_path , output_hidden_states=True)
         self.lstm = nn.LSTM(self.roberta.config.hidden_size,lstm_hidden_size,lstm_layers,batch_first=True,dropout=lstm_dropout,bidirectional=True)
         self.linear = nn.Linear(lstm_hidden_size*2,num_classes)
         self.dropout = nn.Dropout(0.2)
@@ -40,8 +40,9 @@ class LSTM_RoBERTA(nn.Module):
         print("Total_untrainable_params : ",sum(p.numel() for p in self.parameters() if not p.requires_grad))
     def forward(self, input_ids, attention_mask):
         roberta_output = self.roberta(input_ids, attention_mask)
-        roberta_output = roberta_output.last_hidden_state
-        lstm_output, (h_n,c_n) = self.lstm(roberta_output)
+        last_hidden_states = roberta_output[2]
+        avg_hidden_states = torch.mean(torch.stack(last_hidden_states[-4:]), dim=0)
+        lstm_output, (h_n,c_n) = self.lstm(avg_hidden_states)
         logits = self.linear(lstm_output[:, -1, :])
         # print(logits.shape,"logits")
         return logits
@@ -97,8 +98,8 @@ def collate_fn(batch):
     return (x, y)
 
 # %%
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn)
-test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn)
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=collate_fn, num_workers=4)
+test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, collate_fn=collate_fn, num_workers=4)
 
 # %%
 from lightning.pytorch.utilities.types import TRAIN_DATALOADERS
@@ -163,11 +164,11 @@ class LitModel(L.LightningModule):
         
 
 # %%
-wandb_logger = WandbLogger(project='roberta-lstm', log_model=True , name="roberta-lstm-again")
-trainer = L.Trainer(max_epochs=5, devices="auto",val_check_interval=2000,default_root_dir="robert-lstm",strategy='ddp_find_unused_parameters_true' , logger=wandb_logger)
+wandb_logger = WandbLogger(project='roberta-lstm', log_model=True , name="roberta-lstm-avg_layers")
+trainer = L.Trainer(max_epochs=5, devices="auto",val_check_interval=1800,default_root_dir="robert-lstm",strategy='ddp_find_unused_parameters_true' , logger=wandb_logger)
 
 # %%
-model = LitModel.load_from_checkpoint("/scratch/jainit/LSTM-classifier/best_bert_freeze.ckpt" , train_loader=train_loader , val_loader=test_loader , model_path="roberta-base" , lr=2e-5, hidden_size=256, lstm_layers=2, lstm_dropout=0.2, num_classes=2)
+model = LitModel( train_loader=train_loader , val_loader=test_loader , model_path="roberta-base" , lr=2e-5, hidden_size=512, lstm_layers=2, lstm_dropout=0.5, num_classes=2)
 
 trainer.fit(model)
 trainer.save_checkpoint("again_train_best_bert_freeze.ckpt")
