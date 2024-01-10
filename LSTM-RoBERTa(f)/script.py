@@ -25,11 +25,12 @@ last_hidden_states = outputs.last_hidden_state
 
 # %%
 class LSTM_RoBERTA(nn.Module):
-    def __init__(self,roberta_path = "roberta-base",lstm_hidden_size=256,lstm_layers=2,lstm_dropout=0.2 , num_classes=2):
+    def __init__(self,roberta_path = "roberta-base",lstm_hidden_size=256,lstm_layers=2,lstm_dropout=0.2 , num_classes=2, to_take = [-1]):
         super().__init__()
         self.roberta = RobertaModel.from_pretrained(roberta_path , output_hidden_states=True)
         self.lstm = nn.LSTM(self.roberta.config.hidden_size,lstm_hidden_size,lstm_layers,batch_first=True,dropout=lstm_dropout,bidirectional=True)
         self.linear = nn.Linear(lstm_hidden_size*2,num_classes)
+        self.to_take = to_take
         self.dropout = nn.Dropout(0.2)
         for param in self.roberta.parameters():
             param.requires_grad = False
@@ -41,7 +42,8 @@ class LSTM_RoBERTA(nn.Module):
     def forward(self, input_ids, attention_mask):
         roberta_output = self.roberta(input_ids, attention_mask)
         last_hidden_states = roberta_output[2]
-        avg_hidden_states = torch.mean(torch.stack(last_hidden_states[-4:]), dim=0)
+        required_layers = [last_hidden_states[i] for i in self.to_take]
+        avg_hidden_states = torch.mean(torch.stack(required_layers), dim=0)
         lstm_output, (h_n,c_n) = self.lstm(avg_hidden_states)
         logits = self.linear(lstm_output[:, -1, :])
         # print(logits.shape,"logits")
